@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:m_shop/Counters/cartitemcounter.dart';
+import 'package:m_shop/Counters/changeAddresss.dart';
+import 'package:m_shop/Counters/totalMoney.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'Authentication/authenication.dart';
 import 'package:m_shop/Config/config.dart';
@@ -15,18 +19,27 @@ Future<void> main() async {
   EcommerceApp.firestore = Firestore.instance;
 
   runApp(MShop());
-}  
+}
 
 class MShop extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (c) => CartItemCounter()),
+        ChangeNotifierProvider(create: (c) => CartItemCounter()),
+        ChangeNotifierProvider(create: (c) => AddressChanger()),
+        ChangeNotifierProvider(create: (c) => TotalAmount()),
+      ],
+      child: MaterialApp(
         title: 'm-Shop',
         debugShowCheckedModeBanner: false, //remove the debug banner
         theme: ThemeData(
           primaryColor: Colors.green,
         ),
-        home: SplashScreen());
+        home: SplashScreen(),
+      ),
+    );
   }
 }
 
@@ -72,8 +85,8 @@ class _SplashScreenState extends State<SplashScreen> {
                 fit: BoxFit.contain,
               ),
               shape: BoxShape.rectangle,
-            ),  
-          ), 
+            ),
+          ),
         ),
       ),
     );
