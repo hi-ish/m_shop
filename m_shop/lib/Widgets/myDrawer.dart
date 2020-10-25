@@ -130,7 +130,7 @@ class MyDrawer extends StatelessWidget {
                 
                 ListTile(
                   leading: Icon(
-                    Icons.home,
+                    Icons.add_location,
                     color: Colors.white,
                   ),
                   title: Text(

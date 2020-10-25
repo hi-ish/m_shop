@@ -60,7 +60,11 @@ class _StoreHomeState extends State<StoreHome> {
                       child: Consumer<CartItemCounter>(
                           builder: (context, counter, _) {
                         return Text(
-                          counter.count.toString(),
+                          (EcommerceApp.sharedPreferences
+                                      .getStringList(EcommerceApp.userCartList)
+                                      .length -
+                                  1)
+                              .toString(),
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 12.0,
@@ -84,12 +88,13 @@ class _StoreHomeState extends State<StoreHome> {
             SliverPersistentHeader(
               pinned: true,
               delegate: SearchBoxDelegate(),
-              
             ),
-
-            
             StreamBuilder<QuerySnapshot>(
-              stream: Firestore.instance.collection('items').limit(15).orderBy('publishedDate', descending: true).snapshots(),
+              stream: Firestore.instance
+                  .collection('items')
+                  .limit(15)
+                  .orderBy('publishedDate', descending: true)
+                  .snapshots(),
               builder: (context, dataSnapshot) {
                 return !dataSnapshot.hasData
                     ? SliverToBoxAdapter(
@@ -109,8 +114,6 @@ class _StoreHomeState extends State<StoreHome> {
                       );
               },
             ),
-
-
           ],
         ),
       ),
@@ -121,6 +124,11 @@ class _StoreHomeState extends State<StoreHome> {
 Widget sourceInfo(ItemModel model, BuildContext context,
     {Color background, removeCartFunction}) {
   return InkWell(
+    onTap: () {
+      Route route =
+          MaterialPageRoute(builder: (c) => ProductPage(itemModel: model));
+      Navigator.pushReplacement(context, route);
+    },
     splashColor: Colors.green,
     child: Padding(
       padding: EdgeInsets.all(6.0),
@@ -229,7 +237,6 @@ Widget sourceInfo(ItemModel model, BuildContext context,
                                   ),
                                 ),
                                 Text(
-                                  
                                   (model.price + model.price).toString(),
                                   style: TextStyle(
                                     fontSize: 15.0,
@@ -245,7 +252,7 @@ Widget sourceInfo(ItemModel model, BuildContext context,
                             child: Row(
                               children: [
                                 Text(
-                                  'New Price: Rs',
+                                  'New Price: Rs ',
                                   style: TextStyle(
                                     fontSize: 14.0,
                                     color: Colors.grey,
@@ -268,6 +275,31 @@ Widget sourceInfo(ItemModel model, BuildContext context,
                   Flexible(
                     child: Container(),
                   ),
+                  //add/remove from cart
+                  Align(
+                      alignment: Alignment.centerRight,
+                      child: removeCartFunction == null
+                          ? IconButton(
+                              icon: Icon(Icons.add_shopping_cart),
+                              color: Colors.green,
+                              onPressed: () {
+                                checkItemInCart(model.shortInfo, context);
+                              })
+                          : IconButton(
+                              icon: Icon(
+                                Icons.delete,
+                                color: Colors.pinkAccent,
+                              ),
+                              onPressed: () {
+                                removeCartFunction();
+                                Route route = MaterialPageRoute(
+                                    builder: (c) => StoreHome());
+                                Navigator.pushReplacement(context, route); 
+                              })),
+                  Divider(
+                    height: 5.0,
+                    color: Colors.green,
+                  ),
                 ],
               ),
             ),
@@ -282,4 +314,28 @@ Widget card({Color primaryColor = Colors.redAccent, String imgPath}) {
   return Container();
 }
 
-void checkItemInCart(String productID, BuildContext context) {}
+void checkItemInCart(String shortInfoAsID, BuildContext context) {
+  EcommerceApp.sharedPreferences
+          .getStringList(EcommerceApp.userCartList)
+          .contains(shortInfoAsID)
+      ? Fluttertoast.showToast(msg: 'Item is already in the cart.')
+      : addItemToCart(shortInfoAsID, context);
+}
+
+addItemToCart(String shortInfoAsID, BuildContext context) {
+  List tempCartList =
+      EcommerceApp.sharedPreferences.getStringList(EcommerceApp.userCartList);
+  tempCartList.add(shortInfoAsID);
+
+  EcommerceApp.firestore
+      .collection(EcommerceApp.collectionUser)
+      .document(EcommerceApp.sharedPreferences.getString(EcommerceApp.userUID))
+      .updateData({
+    EcommerceApp.userCartList: tempCartList,
+  }).then((v) {
+    Fluttertoast.showToast(msg: 'Item added to Cart successfully.');
+    EcommerceApp.sharedPreferences
+        .setStringList(EcommerceApp.userCartList, tempCartList);
+    Provider.of<CartItemCounter>(context, listen: false).displayResult();
+  });
+}
